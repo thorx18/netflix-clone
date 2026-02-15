@@ -12,6 +12,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
+               echo "docker image is building"
                dockerBuild("netflix-clone:latest")
             }
         }
