@@ -1,4 +1,4 @@
-name: Build and Deploy Netflix Clone
+name: Build, Scan and Deploy Netflix Clone
 
 on:
   push:
@@ -10,26 +10,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run npm Audit
+        run: npm audit --audit-level=high
+
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/netflix-clone:latest
+      - name: Build Docker Image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/netflix-clone:latest .
 
-     
+      - name: Scan Docker Image with Trivy
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/netflix-clone:latest
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+      - name: Push Docker Image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/netflix-clone:latest
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1
         with:
@@ -38,14 +54,11 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/netflix-clone:latest
-
             docker stop netflix-clone || true
             docker rm netflix-clone || true
-
             docker run -d \
               --name netflix-clone \
               --restart unless-stopped \
               -p 80:3000 \
               ${{ secrets.DOCKERHUB_USERNAME }}/netflix-clone:latest
-
             docker image prune -f
