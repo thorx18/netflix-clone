@@ -21,11 +21,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/netflix:v1 .
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/netflix:v1 .
 
       - name: Push Docker image
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/netflix:v1
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/netflix:v1
 
       - name: Copy k8s files to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -44,5 +44,5 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             kubectl apply -f /home/ubuntu/k8s/deployment_service.yml
-            kubectl set image deployment/netflix-clone web=${{ secrets.DOCKER_USERNAME }}/netflix:v1
+            kubectl set image deployment/netflix-clone web=${{ secrets.DOCKERHUB_USERNAME }}/netflix:v1
             kubectl rollout status deployment/netflix-clone
