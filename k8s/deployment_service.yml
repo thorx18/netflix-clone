@@ -28,7 +28,7 @@ kind: Service
 metadata:
   name: netflix-clone
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: netflix-clone
   ports:
