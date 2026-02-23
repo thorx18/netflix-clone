@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: shubhamx18/netflix:latest
+          image: shubhamx18/netflix:v1
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
